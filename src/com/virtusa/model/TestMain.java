@@ -4,6 +4,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
@@ -18,15 +19,17 @@ public class TestMain {
 	 * @throws NoSuchFieldException
 	 * @throws IllegalAccessException
 	 * @throws IllegalArgumentException
+	 * @throws InstantiationException
 	 */
 	public static void main(String[] args) throws SQLException,
 			NoSuchFieldException, SecurityException, IllegalArgumentException,
-			IllegalAccessException {
+			IllegalAccessException, InstantiationException {
 
-		Employee employee = new Employee(101, "password", "Abhishek", 100.25, 4);
-		save(employee);
+		// Employee employee = new Employee(101, "password", "Abhishek", 100.00,
+		// 4);
+		// save(employee);
 
-		// Class Employee = employee.getClass();
+		// Class Employee = Employee.class;
 		//
 		// CreateTable CREATETABLEAnnotation = (CreateTable) Employee
 		// .getAnnotation(CreateTable.class);
@@ -108,6 +111,112 @@ public class TestMain {
 		// boolean result = statement.execute(query);
 		// System.out.println(result);
 
+		Employee employee = (Employee) fetchObject(Employee.class, 101);
+		employee.setEmployeeName("Abhishek Panda");
+		employee.setEmployeeSalary(100.25);
+		employee.setPassword("Dubaara Mat Pucchna");
+		update(employee);
+		// System.out.println(employee.getEmployeeName());
+		// System.out.println(employee.getEmployeeCode());
+		// System.out.println(employee.getEmployeeSalary());
+
+	}
+
+	private static void update(Object object) throws IllegalArgumentException,
+			IllegalAccessException, SQLException {
+		// TODO Auto-generated method stub
+		CreateTable CREATETABLEAnnotation = (CreateTable) object.getClass()
+				.getAnnotation(CreateTable.class);
+		String query = "update " + CREATETABLEAnnotation.value() + " set ";
+
+		Field[] publicFields = object.getClass().getDeclaredFields();
+		for (int i = 1; i < publicFields.length; i++)
+
+		{
+			publicFields[i].setAccessible(true);
+
+			if (publicFields[i].getType().getSimpleName().equals("String"))
+				query += publicFields[i].getName() + " = '"
+						+ publicFields[i].get(object) + "'" + " ,";
+			else
+				query += publicFields[i].getName() + " = "
+						+ publicFields[i].get(object) + ",";
+		}
+		publicFields[0].setAccessible(true);
+		query = query.substring(0, query.length() - 1);
+		query += " where " + publicFields[0].getName() + " = "
+				+ publicFields[0].get(object);
+		System.out.println(query);
+
+		Connection connection = OracleConnection.getConnection();
+		// CallableStatement callableStatement;
+		Statement statement = connection.createStatement();
+		statement.executeUpdate(query);
+
+	}
+
+	private static Object fetchObject(Class class1, int pKey)
+			throws SQLException, IllegalArgumentException,
+			IllegalAccessException, NoSuchFieldException, SecurityException,
+			InstantiationException {
+		// TODO Auto-generated method stub
+		Object object = class1.newInstance();
+
+		Field[] publicFields = class1.getDeclaredFields();
+		CreateTable CREATETABLEAnnotation = (CreateTable) class1
+				.getAnnotation(CreateTable.class);
+
+		Field primaryKey = null;
+
+		for (Field field : class1.getDeclaredFields()) {
+			Class type = field.getType();
+			String name = field.getName();
+			Annotation[] annotations = field.getDeclaredAnnotations();
+			if (annotations.length > 0) {
+				for (int i = 0; i < annotations.length; i++) {
+
+					if (annotations[i].annotationType().getSimpleName()
+							.equals("PrimaryKey")) {
+						primaryKey = field;
+					}
+				}
+			}
+		}
+
+		String sql = "Select * from " + CREATETABLEAnnotation.value()
+				+ " where " + primaryKey.getName() + " = " + pKey;
+
+		for (int i = 0; i < publicFields.length; i++)
+
+		{
+			publicFields[i].setAccessible(true);
+
+		}
+
+		System.out.println(sql);
+
+		Connection connection = OracleConnection.getConnection();
+		Statement statement = connection.createStatement();
+		ResultSet rs = statement.executeQuery(sql);
+
+		if (rs.next()) {
+			for (int i = 0; i < publicFields.length; i++) {
+				Object resultObject = rs.getObject(i + 1);
+				if (resultObject instanceof java.math.BigDecimal) {
+					if (publicFields[i].getType().getSimpleName().equals("int")) {
+						publicFields[i].set(object,
+								Integer.parseInt(resultObject.toString()));
+					} else if (publicFields[i].getType().getSimpleName()
+							.equals("double")) {
+						publicFields[i].set(object,
+								Double.parseDouble(resultObject.toString()));
+					}
+				} else
+					publicFields[i].set(object, resultObject);
+			}
+		}
+
+		return object;
 	}
 
 	public static int save(Object object) throws NoSuchFieldException,
@@ -125,7 +234,40 @@ public class TestMain {
 		{
 			publicFields[i].setAccessible(true);
 			if (publicFields[i].getType().getSimpleName().equals("String"))
-				sql += "'"+publicFields[i].get(object)+"'" + " ,";
+				sql += "'" + publicFields[i].get(object) + "'" + " ,";
+			else
+				sql += publicFields[i].get(object) + ",";
+
+		}
+
+		sql = sql.substring(0, sql.length() - 1);
+		sql += ")";
+		System.out.println(sql);
+
+		Connection connection = OracleConnection.getConnection();
+		// CallableStatement callableStatement;
+		Statement statement = connection.createStatement();
+		statement.executeUpdate(sql);
+
+		return 0;
+	}
+
+	public static int delete(Object object) throws NoSuchFieldException,
+			SecurityException, IllegalArgumentException,
+			IllegalAccessException, SQLException {
+
+		Field[] publicFields = object.getClass().getDeclaredFields();
+		CreateTable CREATETABLEAnnotation = (CreateTable) object.getClass()
+				.getAnnotation(CreateTable.class);
+		String sql = "Insert into " + CREATETABLEAnnotation.value()
+				+ " values(";
+
+		for (int i = 0; i < publicFields.length; i++)
+
+		{
+			publicFields[i].setAccessible(true);
+			if (publicFields[i].getType().getSimpleName().equals("String"))
+				sql += "'" + publicFields[i].get(object) + "'" + " ,";
 			else
 				sql += publicFields[i].get(object) + ",";
 
