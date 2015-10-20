@@ -9,6 +9,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import com.virtusa.databaseservices.OracleConnection;
+import com.virtusa.services.DbServices;
 
 public class TestMain {
 
@@ -25,9 +26,11 @@ public class TestMain {
 			NoSuchFieldException, SecurityException, IllegalArgumentException,
 			IllegalAccessException, InstantiationException {
 
-		// Employee employee = new Employee(101, "password", "Abhishek", 100.00,
-		// 4);
-		// save(employee);
+		 Employee employee = new Employee(201, "password", "Dhoni", 100.00,
+		 4);
+		 DbServices dbServices = new DbServices(employee.getClass());
+//		 dbServices.saveToDb(employee);
+		 dbServices.deleteFromDb(201);
 
 		// Class Employee = Employee.class;
 		//
@@ -111,16 +114,23 @@ public class TestMain {
 		// boolean result = statement.execute(query);
 		// System.out.println(result);
 
-		Employee employee = (Employee) fetchObject(Employee.class, 101);
-		employee.setEmployeeName("Abhishek Panda");
-		employee.setEmployeeSalary(100.25);
-		employee.setPassword("Dubaara Mat Pucchna");
-		update(employee);
+//    	DbServices dbServices = new DbServices(Employee.class);
+//		Employee employee = (Employee) dbServices.fetchObject("200");
+//		employee.setEmployeeName("Abhishek Panda");
+//		employee.setEmployeeSalary(100.25);
+//		employee.setPassword("Dubaara Mat Pucchna");
+//		System.out.println(employee);
+		//update(employee);
 		// System.out.println(employee.getEmployeeName());
 		// System.out.println(employee.getEmployeeCode());
 		// System.out.println(employee.getEmployeeSalary());
-
+//
+//		DbServices dbServices = new DbServices(Employee.class);
+//		Employee employee = new Employee(200,"pass","Sachin",123.45,3);
+//		dbServices.saveToDb(employee);
 	}
+
+	
 
 	private static void update(Object object) throws IllegalArgumentException,
 			IllegalAccessException, SQLException {
@@ -224,6 +234,7 @@ public class TestMain {
 			IllegalAccessException, SQLException {
 
 		Field[] publicFields = object.getClass().getDeclaredFields();
+		
 		CreateTable CREATETABLEAnnotation = (CreateTable) object.getClass()
 				.getAnnotation(CreateTable.class);
 		String sql = "Insert into " + CREATETABLEAnnotation.value()
